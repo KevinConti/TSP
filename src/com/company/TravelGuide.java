@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,6 +15,8 @@ public class TravelGuide {
     private double mean;
     private double std;
     private double minCost;
+    private BigDecimal sumTrips;
+    private BigDecimal sumSquares;
     private int[] minOrder;
     private double maxCost;
     private int[] maxOrder;
@@ -27,7 +30,9 @@ public class TravelGuide {
         maxCost = -999999;
         minOrder = new int[PermutationTester.V + 1];
         maxOrder = new int[PermutationTester.V + 1];
-        allTripLengths = new ArrayList<>();
+        sumTrips = new BigDecimal("0");
+        sumSquares = new BigDecimal("0");
+//        allTripLengths = new ArrayList<>();
 
         try {
             File file = new File(filepath);
@@ -51,6 +56,8 @@ public class TravelGuide {
     }
 
     public double travelCost(int fromCityIndex, int toCityIndex){
+        fromCityIndex--;
+        toCityIndex--;
         double deltaXSquared = Math.pow(this.getCityX(fromCityIndex) - this.getCityX(toCityIndex), 2);
         double deltaYSquared = Math.pow(this.getCityY(fromCityIndex) - this.getCityY(toCityIndex), 2);
         return Math.sqrt(deltaXSquared + deltaYSquared);
@@ -64,7 +71,7 @@ public class TravelGuide {
         }
         sum += this.travelCost(indexArray[indexArray.length-1], indexArray[1]);
 
-        this.addTrip(sum);
+//        this.addTrip(sum);
         return sum;
     }
 
@@ -136,13 +143,29 @@ public class TravelGuide {
         }
     }
 
-    public ArrayList<Double> getAllTripLengths() {
-        return allTripLengths;
+    public BigDecimal getSumTrips() {
+        return sumTrips;
     }
 
-    public void addTrip(double length) {
-        this.allTripLengths.add(length);
+    public void setSumTrips(BigDecimal sumTrips) {
+        this.sumTrips = sumTrips;
     }
+
+    public BigDecimal getSumSquares() {
+        return sumSquares;
+    }
+
+    public void setSumSquares(BigDecimal sumSquares) {
+        this.sumSquares = sumSquares;
+    }
+
+    //    public ArrayList<Double> getAllTripLengths() {
+//        return allTripLengths;
+//    }
+
+//    public void addTrip(double length) {
+//        this.allTripLengths.add(length);
+//    }
 
     @Override
     public String toString() {

@@ -1,0 +1,6 @@
+The standard deviation is: 0.376826
+The mean is: 3.393071
+The minimum cost is: 2.578259
+Minimum cost order: 1 3 2 4 5 6 
+The maximum cost is: 4.056414
+Maximum cost order: 1 2 6 3 5 4 

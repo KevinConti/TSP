@@ -1,12 +1,21 @@
 package com.company;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
+
+import static java.math.BigDecimal.ROUND_FLOOR;
+import static java.math.BigDecimal.ROUND_HALF_DOWN;
+import static java.math.BigDecimal.ROUND_HALF_UP;
 
 public class Main {
 
     static TravelGuide myGuide;
-    final static double BINS = 10;
-    static int count = 0;
+    final static double BINS = 100;
+    static long count = 0;
 
     public static void main(String[] args) {
         doExhaustiveSearch();
@@ -14,13 +23,27 @@ public class Main {
 
     private static void doExhaustiveSearch(){
         //The value of 14!
-        final double PERMUTATIONS = 6*5*4*3*2;
+        final BigInteger PERMUTATIONS = factorial(6);
         //Parse data to create a useable dictionary
         myGuide = new TravelGuide("data/data.txt");
         //Call the permutation tester. This will call usePermutation once per permutation
         runPermutation();
         //Print answers
-        printAnswers(PERMUTATIONS);
+        try {
+            printAnswers(PERMUTATIONS);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static BigInteger factorial(int factorialSize){
+        BigInteger value = new BigInteger("1");
+        while(factorialSize > 0){
+            String currentFactorial = Integer.toString(factorialSize);
+            value = value.multiply(new BigInteger(currentFactorial));
+            factorialSize--;
+        }
+        return value;
     }
 
     private static void runPermutation(){
@@ -31,109 +54,134 @@ public class Main {
     }
 
     public static void usePermutation(int[] values){
+        count++;
+        if(count % 100000 == 0) {
+            System.out.println(count);
+        }
         //Determine the cost of the trip
         double cost = myGuide.tripCost(values);
 
         //Add cost of this trip to mean for calculation later
         myGuide.setMean(myGuide.getMean() + cost);
 
+        BigDecimal tripCost = new BigDecimal(Double.toString(cost));
+        BigDecimal tripCostSquared = tripCost.multiply(tripCost);
+        myGuide.setSumSquares(myGuide.getSumSquares().add(tripCostSquared));
+        myGuide.setSumTrips(myGuide.getSumTrips().add(tripCost));
+
         //Set this cost as the min or max trip (so far), if necessary
         setMinOrMaxCost(cost, values);
-
-//        System.out.print("Order: ");
-//        for(int element: values){
-//            System.out.printf("%d ", element);
-//        }
-//        System.out.println();
     }
 
-    private static void printAnswers(double permutations){
+    private static void printAnswers(BigInteger permutations) throws IOException {
+        //Setup PrintWriter for file output
+        FileWriter fileWriter = new FileWriter("data/out.txt");
+        PrintWriter printWriter = new PrintWriter(fileWriter);
+
         //Find standard deviation
-        double sumOfTrips = myGuide.getMean();
-        double stdev = calculateStandardDeviation(sumOfTrips);
-        System.out.printf("The standard deviation is: %f\n", stdev);
+        BigDecimal sumOfTrips = myGuide.getSumTrips(); //Mean has not been divided by n yet, so this is just a sum
+        BigDecimal stdev = calculateStandardDeviation(permutations, sumOfTrips);
+        printWriter.printf("The standard deviation is: %f\n", stdev.doubleValue());
 
         //Calculate final mean
-        myGuide.setMean(myGuide.getMean() / permutations);
-        System.out.printf("The mean is: %f\n", myGuide.getMean());
+        BigDecimal bigMean = new BigDecimal(Double.toString(myGuide.getMean()));
+        BigDecimal permutationDecimal = new BigDecimal(permutations);
+        bigMean = bigMean.divide(permutationDecimal, 6, BigDecimal.ROUND_HALF_DOWN);
+        double mean = bigMean.doubleValue();
+        myGuide.setMean(mean);
+        printWriter.printf("The mean is: %f\n", myGuide.getMean());
 
         //Display final minumum and maximum cost
-        System.out.printf("The minimum cost is: %f\n", myGuide.getMinCost());
-        System.out.print("Minimum cost order: ");
-        for(int element: myGuide.getMinOrder()){
-            System.out.printf("%d ", element);
+        printWriter.printf("The minimum cost is: %f\n", myGuide.getMinCost());
+        printWriter.print("Minimum cost order: ");
+        for(int i = 1; i < myGuide.getMinOrder().length; i++){
+            printWriter.printf("%d ", myGuide.getMinOrder()[i]);
         }
         System.out.println();
-        System.out.printf("The maximum cost is: %f\n", myGuide.getMaxCost());
-        System.out.print("Maximum cost order: ");
-        for(int element: myGuide.getMaxOrder()){
-            System.out.printf("%d ", element);
+        printWriter.println();
+        printWriter.printf("The maximum cost is: %f\n", myGuide.getMaxCost());
+        printWriter.print("Maximum cost order: ");
+        for(int i = 1; i < myGuide.getMaxOrder().length; i++){
+            printWriter.printf("%d ", myGuide.getMaxOrder()[i]);
         }
-        System.out.println();
+        printWriter.println();
 
         //Calculate bins, and store each trip in the appropriate bin
-        ArrayList<Double>[] filledBins = calculateBins();
+        //TODO: Fix
+//        double interval = (myGuide.getMaxCost() - myGuide.getMinCost())/ BINS;
+//        printWriter.printf("The interval for each bin is: %f\n", interval);
+//        ArrayList<Double>[] filledBins = calculateBins(interval);
+//        printWriter.println("Frequency of each bin:");
+//        double startingInterval = myGuide.getMinCost();
+//        for(int i = 0; i < filledBins.length; i++){
+//            printWriter.printf("Bucket %d (%f to %f): Count = %d\n",
+//                    i,
+//                    startingInterval + interval*i,
+//                    startingInterval + interval*(i+1),
+//                    filledBins[i].size());
+//        }
+
+        printWriter.close();
     }
 
-    private static double calculateStandardDeviation(double sumOfTrips){
-        ArrayList<Double> allTrips = myGuide.getAllTripLengths();
-        int numTrips = allTrips.size();
+    private static BigDecimal calculateStandardDeviation(BigInteger permutations, BigDecimal sumOfTrips){
+        BigDecimal numTrips = new BigDecimal(permutations);
 
-        //Calculate squares of each trip
-        double sumsSquared = 0.0;
-        for(int i = 0; i < numTrips; i++){
-            Double currentTrip = allTrips.get(i);
-            sumsSquared += Math.pow(currentTrip, 2);
+        BigDecimal sumOfTripsSquared = sumOfTrips.multiply(sumOfTrips);
+        BigDecimal numerator = myGuide.getSumSquares().subtract(sumOfTripsSquared.divide(numTrips, 15, ROUND_HALF_DOWN));
+        BigDecimal denominator = numTrips;
+        BigDecimal value = numerator.divide(denominator, 15, ROUND_HALF_UP);
+        return sqrt(value, 15);
+    }
+
+    private static BigDecimal sqrt(BigDecimal A, final int SCALE) {
+        final BigDecimal TWO = BigDecimal.valueOf(2);
+        BigDecimal x0 = new BigDecimal("0");
+        BigDecimal x1 = A.divide(TWO, 15, ROUND_FLOOR);
+        while (!x0.equals(x1)) {
+            x0 = x1;
+            x1 = A.divide(x0, SCALE, ROUND_HALF_UP);
+            x1 = x1.add(x0);
+            x1 = x1.divide(TWO, SCALE, ROUND_HALF_UP);
+
         }
-        double sumOfTripsSquared = Math.pow(sumOfTrips, 2);
-
-        double numerator = sumsSquared - sumOfTripsSquared/numTrips;
-        double denominator = numTrips;
-        return Math.sqrt(numerator/denominator);
+        return x1;
     }
 
     private static void setMinOrMaxCost(double cost, int[] values){
         if(cost < myGuide.getMinCost()){
             myGuide.setMinCost(cost);
             myGuide.setMinOrder(values);
-            System.out.println("Min order:");
-            for(int i = 0; i < myGuide.getMinOrder().length; i++){
-                System.out.printf("%d ", myGuide.getMinOrder()[i]);
-            }
-            System.out.println("");
         }
         if(cost > myGuide.getMaxCost()){
             myGuide.setMaxCost(cost);
             myGuide.setMaxOrder(values);
         }
     }
+//TODO: Fix
+//    private static ArrayList<Double>[] calculateBins(double interval){
+////        ArrayList<Double>[] filledBins = fillBins(interval);
+//
+//        return filledBins;
+//    }
 
-    private static ArrayList<Double>[] calculateBins(){
-        //Determine the interval for the number of bins
-        double interval = (myGuide.getMaxCost() - myGuide.getMinCost())/ BINS;
-        System.out.printf("The interval for the bins is: %f\n", interval);
-
-        ArrayList<Double>[] filledBins = fillBins(interval);
-
-        return filledBins;
-    }
-
-    private static ArrayList<Double>[] fillBins(double interval){
-        ArrayList<Double> tripLengths = myGuide.getAllTripLengths();
-        ArrayList<Double>[] bins = initializeBins();
-        //Add each trip to the correct bucket
-        for(int i = 0; i < tripLengths.size(); i++){
-            double currentTrip = tripLengths.get(i);
-            //The following line normalizes the value to return a value 0-9,
-            //Which corresponds to the appropriate bucket to place that trip in
-            int bucketIndex = (int) Math.floor((currentTrip - myGuide.getMinCost())/interval);
-            if(bucketIndex == bins.length){
-                bucketIndex--;
-            }
-            bins[bucketIndex].add(currentTrip);
-        }
-        return bins;
-    }
+    //TODO: Fix
+//    private static ArrayList<Double>[] fillBins(double interval){
+//        ArrayList<Double> tripLengths = myGuide.getAllTripLengths();
+//        ArrayList<Double>[] bins = initializeBins();
+//        //Add each trip to the correct bucket
+//        for(int i = 0; i < tripLengths.size(); i++){
+//            double currentTrip = tripLengths.get(i);
+//            //The following line normalizes the value to return a value 0-9,
+//            //Which corresponds to the appropriate bucket to place that trip in
+//            int bucketIndex = (int) Math.floor((currentTrip - myGuide.getMinCost())/interval);
+//            if(bucketIndex == bins.length){
+//                bucketIndex--;
+//            }
+//            bins[bucketIndex].add(currentTrip);
+//        }
+//        return bins;
+//    }
 
     private static ArrayList<Double>[] initializeBins(){
         ArrayList<Double>[] bins = (ArrayList<Double>[])new ArrayList[(int) BINS];

@@ -4,7 +4,7 @@ public class PermutationTester {
 
     static int[] val;
     static int now = -1;
-    static int V = 6; //13 for real run
+    static int V = 6; //14 for real run
     static int count = 0;
 
     public static void p(int k) {
