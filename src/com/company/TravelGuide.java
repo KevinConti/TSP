@@ -25,8 +25,8 @@ public class TravelGuide {
         std = 0.0;
         minCost = 999999;
         maxCost = -999999;
-        minOrder = new int[PermutationTester.V];
-        maxOrder = new int[PermutationTester.V];
+        minOrder = new int[PermutationTester.V + 1];
+        maxOrder = new int[PermutationTester.V + 1];
         allTripLengths = new ArrayList<>();
 
         try {
@@ -120,16 +120,20 @@ public class TravelGuide {
         return minOrder;
     }
 
-    public void setMinOrder(int[] minOrder) {
-        this.minOrder = minOrder;
+    public void setMinOrder(int[] newMinOrder) {
+        for(int i = 0; i < minOrder.length; i++){
+            minOrder[i] = newMinOrder[i];
+        }
     }
 
     public int[] getMaxOrder() {
         return maxOrder;
     }
 
-    public void setMaxOrder(int[] maxOrder) {
-        this.maxOrder = maxOrder;
+    public void setMaxOrder(int[] newMaxOrder) {
+        for(int i = 0; i < maxOrder.length; i++){
+            maxOrder[i] = newMaxOrder[i];
+        }
     }
 
     public ArrayList<Double> getAllTripLengths() {

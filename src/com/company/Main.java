@@ -6,6 +6,7 @@ public class Main {
 
     static TravelGuide myGuide;
     final static double BINS = 10;
+    static int count = 0;
 
     public static void main(String[] args) {
         doExhaustiveSearch();
@@ -30,7 +31,6 @@ public class Main {
     }
 
     public static void usePermutation(int[] values){
-
         //Determine the cost of the trip
         double cost = myGuide.tripCost(values);
 
@@ -39,6 +39,12 @@ public class Main {
 
         //Set this cost as the min or max trip (so far), if necessary
         setMinOrMaxCost(cost, values);
+
+//        System.out.print("Order: ");
+//        for(int element: values){
+//            System.out.printf("%d ", element);
+//        }
+//        System.out.println();
     }
 
     private static void printAnswers(double permutations){
@@ -90,6 +96,11 @@ public class Main {
         if(cost < myGuide.getMinCost()){
             myGuide.setMinCost(cost);
             myGuide.setMinOrder(values);
+            System.out.println("Min order:");
+            for(int i = 0; i < myGuide.getMinOrder().length; i++){
+                System.out.printf("%d ", myGuide.getMinOrder()[i]);
+            }
+            System.out.println("");
         }
         if(cost > myGuide.getMaxCost()){
             myGuide.setMaxCost(cost);
