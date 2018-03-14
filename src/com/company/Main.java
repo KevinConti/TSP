@@ -18,13 +18,13 @@ public class Main {
     static long count = 0;
 
     public static void main(String[] args) {
-        doExhaustiveSearch();
+        //doExhaustiveSearch();
     }
 
     private static void doExhaustiveSearch(){
         //The value of 14!
-        final BigInteger PERMUTATIONS = factorial(6);
-        //Parse data to create a useable dictionary
+        final BigInteger PERMUTATIONS = factorial(148);
+        //Parse data to create a usable dictionary
         myGuide = new TravelGuide("data/data.txt");
         //Call the permutation tester. This will call usePermutation once per permutation
         runPermutation();
@@ -62,7 +62,7 @@ public class Main {
         double cost = myGuide.tripCost(values);
 
         //Add cost of this trip to mean for calculation later
-        myGuide.setMean(myGuide.getMean() + cost);
+        myGuide.setMean(myGuide.getMean().add(new BigDecimal(Double.toString(cost))));
 
         BigDecimal tripCost = new BigDecimal(Double.toString(cost));
         BigDecimal tripCostSquared = tripCost.multiply(tripCost);
@@ -81,14 +81,14 @@ public class Main {
         //Find standard deviation
         BigDecimal sumOfTrips = myGuide.getSumTrips(); //Mean has not been divided by n yet, so this is just a sum
         BigDecimal stdev = calculateStandardDeviation(permutations, sumOfTrips);
-        printWriter.printf("The standard deviation is: %f\n", stdev.doubleValue());
+        myGuide.setStd(stdev.doubleValue());
+        printWriter.printf("The standard deviation is: %f\n", myGuide.getStd());
 
         //Calculate final mean
-        BigDecimal bigMean = new BigDecimal(Double.toString(myGuide.getMean()));
+        BigDecimal bigMean = myGuide.getMean();
         BigDecimal permutationDecimal = new BigDecimal(permutations);
         bigMean = bigMean.divide(permutationDecimal, 6, BigDecimal.ROUND_HALF_DOWN);
-        double mean = bigMean.doubleValue();
-        myGuide.setMean(mean);
+        myGuide.setMean(bigMean);
         printWriter.printf("The mean is: %f\n", myGuide.getMean());
 
         //Display final minumum and maximum cost
@@ -108,8 +108,8 @@ public class Main {
 
         //Calculate bins, and store each trip in the appropriate bin
         //TODO: Fix
-//        double interval = (myGuide.getMaxCost() - myGuide.getMinCost())/ BINS;
-//        printWriter.printf("The interval for each bin is: %f\n", interval);
+        double interval = (myGuide.getMaxCost() - myGuide.getMinCost())/ BINS;
+        printWriter.printf("The interval for each bin is: %f\n", interval);
 //        ArrayList<Double>[] filledBins = calculateBins(interval);
 //        printWriter.println("Frequency of each bin:");
 //        double startingInterval = myGuide.getMinCost();
@@ -160,7 +160,7 @@ public class Main {
     }
 //TODO: Fix
 //    private static ArrayList<Double>[] calculateBins(double interval){
-////        ArrayList<Double>[] filledBins = fillBins(interval);
+//        ArrayList<Double>[] filledBins = fillBins(interval);
 //
 //        return filledBins;
 //    }

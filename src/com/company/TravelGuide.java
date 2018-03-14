@@ -5,14 +5,13 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 //This class takes the data and converts it into useable format
 public class TravelGuide {
     Map<Integer, double[]> coordinates;
-    private double mean;
+    private BigDecimal mean;
     private double std;
     private double minCost;
     private BigDecimal sumTrips;
@@ -20,11 +19,10 @@ public class TravelGuide {
     private int[] minOrder;
     private double maxCost;
     private int[] maxOrder;
-    private ArrayList<Double> allTripLengths;
 
     public TravelGuide(String filepath) {
         coordinates = new HashMap<>();
-        mean = 0.0;
+        mean = new BigDecimal("0");
         std = 0.0;
         minCost = 999999;
         maxCost = -999999;
@@ -32,7 +30,6 @@ public class TravelGuide {
         maxOrder = new int[PermutationTester.V + 1];
         sumTrips = new BigDecimal("0");
         sumSquares = new BigDecimal("0");
-//        allTripLengths = new ArrayList<>();
 
         try {
             File file = new File(filepath);
@@ -71,7 +68,6 @@ public class TravelGuide {
         }
         sum += this.travelCost(indexArray[indexArray.length-1], indexArray[1]);
 
-//        this.addTrip(sum);
         return sum;
     }
 
@@ -91,11 +87,11 @@ public class TravelGuide {
         return city[1];
     }
 
-    public double getMean() {
+    public BigDecimal getMean() {
         return mean;
     }
 
-    public void setMean(double mean) {
+    public void setMean(BigDecimal mean) {
         this.mean = mean;
     }
 
@@ -158,14 +154,6 @@ public class TravelGuide {
     public void setSumSquares(BigDecimal sumSquares) {
         this.sumSquares = sumSquares;
     }
-
-    //    public ArrayList<Double> getAllTripLengths() {
-//        return allTripLengths;
-//    }
-
-//    public void addTrip(double length) {
-//        this.allTripLengths.add(length);
-//    }
 
     @Override
     public String toString() {
