@@ -23,6 +23,7 @@ public class TripData {
 
     public final double BIN_SIZE = 0.078144;
     public final int NUM_BINS = 100;
+    public final double BIN_STARTING_POINT = 3.689407;
 
     public TripData(int numberOfTrips) {
         coordinates = new HashMap<>();
@@ -154,8 +155,12 @@ public class TripData {
         return allTripOrders;
     }
 
-    public void setAllTripOrders(ArrayList<ArrayList<Integer>> allTripOrders) {
-        this.allTripOrders = allTripOrders;
+    public void setAllTripOrders(ArrayList<ArrayList<Integer>> order) {
+        allTripOrders = new ArrayList<>() ;
+
+        for (int i = 0 ; i<order.size();i++){
+            allTripOrders.add(order.get(i)) ;
+        }
     }
 
     public ArrayList<Double>[] getBins() {
@@ -201,18 +206,30 @@ public class TripData {
         return wasChanged;
     }
 
-    public void fillBins(TripData tripData) {
-        double[] tripLengths = tripData.getTripLengths();
+    public void fillBins() {
+        double[] tripLengths = this.getTripLengths();
         //Add each trip to the correct bucket
         for (int i = 0; i < tripLengths.length; i++) {
             double currentTrip = tripLengths[i];
             //The following line normalizes the value to return a value 0-9,
             //Which corresponds to the appropriate bucket to place that trip in
-            int bucketIndex = (int) Math.floor((currentTrip - tripData.getMinTripLength()) / tripData.BIN_SIZE);
+            int bucketIndex = (int) Math.floor((currentTrip - this.BIN_STARTING_POINT) / this.BIN_SIZE);
             if (bucketIndex == bins.length) {
                 bucketIndex--;
             }
+            if(bucketIndex < 0){
+                System.out.println("Error");
+            }
             bins[bucketIndex].add(currentTrip);
+        }
+
+        for(int i = 0; i < this.getBins().length; i++){
+            double startingInterval = this.BIN_STARTING_POINT;
+            System.out.printf("\nBucket %d (%f to %f): Count = %d",
+                    i,
+                    startingInterval + this.BIN_SIZE*i,
+                    startingInterval + this.BIN_SIZE*(i+1),
+                    this.getBins()[i].size());
         }
     }
 
