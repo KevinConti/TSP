@@ -3,9 +3,11 @@ package com.company;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Random;
 
 import static java.math.BigDecimal.ROUND_FLOOR;
 import static java.math.BigDecimal.ROUND_HALF_DOWN;
@@ -19,6 +21,7 @@ public class Main {
 
     public static void main(String[] args) {
         //doExhaustiveSearch();
+        doRandomSearch();
     }
 
     private static void doExhaustiveSearch(){
@@ -183,13 +186,86 @@ public class Main {
 //        return bins;
 //    }
 
-    private static ArrayList<Double>[] initializeBins(){
-        ArrayList<Double>[] bins = (ArrayList<Double>[])new ArrayList[(int) BINS];
-        for(int i = 0; i < bins.length; i++){
-            bins[i] = new ArrayList<>();
+//    private static ArrayList<Double>[] initializeBins(){
+//        ArrayList<Double>[] bins = (ArrayList<Double>[])new ArrayList[(int) BINS];
+//        for(int i = 0; i < bins.length; i++){
+//            bins[i] = new ArrayList<>();
+//        }
+//
+//        return bins;
+//    }
+
+    public static void doRandomSearch(){
+        final int NUM_TRIPS = 1000000;
+        final int NUM_CITIES = 14;
+        TripData tripData = new TripData(NUM_TRIPS);
+        tripData.setAllTripOrders(generateRandomTrips(NUM_TRIPS, NUM_CITIES));
+        calculateTripData(tripData);
+    }
+
+    public static ArrayList<ArrayList<Integer>> generateRandomTrips(int numTrips, int numCities){
+        ArrayList<ArrayList<Integer>> allTripOrders = new ArrayList<>();
+        for(int x = 0; x < numTrips; x++){
+            //Create random values
+            ArrayList<Integer> trip = new ArrayList<>();
+            Random r = new Random();
+            for(int i = 0; i < numCities; i++) {
+                int result = -1;
+                boolean isUnique = false;
+                //generates a number in range that is not already in ArrayList
+                while(!isUnique) {
+                    result = r.nextInt(numCities);
+                    isUnique = !trip.contains(result);
+                }
+                trip.add(result);
+            }
+            allTripOrders.add(trip);
+        }
+        return allTripOrders;
+    }
+
+    public static void calculateTripData(TripData tripData){
+
+        for(int i = 0; i < tripData.getAllTripOrders().size(); i++){
+            //Calculate trip length
+            double tripLength = tripData.tripCost(tripData.getAllTripOrders().get(i));
+            tripData.setTripLength(i, tripLength);
+            //Add trip length to running sum
+            tripData.setSum(tripData.getSum() + tripLength);
+            //Test for maximum and minimum
+            tripData.setIfMaxOrMin(i, tripLength);
         }
 
-        return bins;
+        //Calculate the mean
+        tripData.setMean(tripData.getSum() / tripData.getTripLengths().length);
+
+        System.out.printf("\nMean is %f\nMaximum trip length is %f\nMax Order: %s\nMin trip length: %f\nMin order: %s",
+                tripData.getMean(),
+                tripData.getMaxTripLength(),
+                tripData.getMaxTripLengthOrder(),
+                tripData.getMinTripLength(),
+                tripData.getMinTripLengthOrder());
+
+        //TODO Calculate bins
+        fillBins(tripData);
+        for(int i = 0; i < tripData.getBins().length; i++){
+            System.out.printf("\nBin %d) %d", i, tripData.getBins()[i].size());
+        }
+    }
+
+        private static void fillBins(TripData tripData){
+        double[] tripLengths = tripData.getTripLengths();
+        //Add each trip to the correct bucket
+        for(int i = 0; i < tripLengths.length; i++){
+            double currentTrip = tripLengths[i];
+            //The following line normalizes the value to return a value 0-9,
+            //Which corresponds to the appropriate bucket to place that trip in
+            int bucketIndex = (int) Math.floor((currentTrip - tripData.getMinTripLength())/tripData.BIN_SIZE);
+            if(bucketIndex == tripData.getBins().length){
+                bucketIndex--;
+            }
+            tripData.getBins()[bucketIndex].add(currentTrip);
+        }
     }
 
 
