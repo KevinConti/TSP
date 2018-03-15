@@ -20,8 +20,9 @@ public class Main {
     public static void main(String[] args) {
         //doExhaustiveSearch();
 //        doRandomSearch();
-        doGeneticSearch();
+//        doGeneticSearch();
 
+        doSimulatedAnnealing();
         //Some testing methods
 //        testMedian();
 //        testKill();
@@ -445,8 +446,69 @@ public class Main {
                 }
             }
         }
-        int killed = startingSize - totalPopulation.size();
         return totalPopulation;
+    }
+
+    private static void doSimulatedAnnealing(){
+        double coolingConstant = 0.0003;
+        TripData tripData = new TripData(50);
+        for(int i = 0; i < 50; i++) {
+
+            //Create initial random solutions
+            ArrayList<Integer> bestSolution = generateRandomTrips(1, 14).get(0);
+            int temperature = 1000;
+            while (temperature > 0) {
+                //Create a small change in the current best solution
+                ArrayList<Integer> newSolution = new ArrayList<>();
+                newSolution.addAll(bestSolution);
+
+                //Swap two random cities for minor change
+                Random random = new Random();
+                int pivotOne;
+                int pivotTwo;
+                do {
+                    pivotOne = random.nextInt(14);
+                    pivotTwo = random.nextInt(14);
+                } while (pivotOne == pivotTwo);
+                int temp = newSolution.get(pivotOne);
+                newSolution.set(pivotOne, newSolution.get(pivotTwo));
+                newSolution.set(pivotTwo, temp);
+
+                //Determine fitness
+                double newSolutionCost = tripData.tripCost(newSolution);
+                double bestSolutionCost = tripData.tripCost(bestSolution);
+
+                //Acceptance function
+                boolean isAcceptable = shouldAccept(newSolutionCost, bestSolutionCost, temperature);
+                if (isAcceptable) {
+                    bestSolution = new ArrayList<>();
+                    bestSolution.addAll(newSolution);
+                }
+
+                temperature -= coolingConstant;
+            }
+            tripData.getAllTripOrders().add(bestSolution);
+        }
+        //Get data
+        calculateTripData(tripData);
+    }
+
+    private static boolean shouldAccept(double newSolutionCost, double bestSolutionCost, int temperature){
+        boolean isAcceptable = false;
+        double probability = determineProbability(newSolutionCost, bestSolutionCost, temperature);
+        if(probability > .999){
+            isAcceptable = true;
+        }
+        return  isAcceptable;
+    }
+
+    private static double determineProbability(double newSolutionCost, double bestSolutionCost, int temperature){
+        if(newSolutionCost < bestSolutionCost){
+            return 1.0;
+        } else {
+            double prob = Math.exp((bestSolutionCost - newSolutionCost) / temperature);
+            return prob;
+        }
     }
 
 
