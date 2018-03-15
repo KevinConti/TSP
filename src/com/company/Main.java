@@ -3,11 +3,9 @@ package com.company;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Random;
+import java.util.*;
 
 import static java.math.BigDecimal.ROUND_FLOOR;
 import static java.math.BigDecimal.ROUND_HALF_DOWN;
@@ -21,7 +19,35 @@ public class Main {
 
     public static void main(String[] args) {
         //doExhaustiveSearch();
-        doRandomSearch();
+//        doRandomSearch();
+//        doGeneticSearch();
+
+        doSimulatedAnnealing();
+        //Some testing methods
+//        testMedian();
+//        testKill();
+    }
+
+    private static void testMedian(){
+        HashMap<Integer, Double> testMap = new HashMap<>();
+        testMap.put(0,1.0);
+        testMap.put(1,2.0);
+        testMap.put(2,3.0);
+        testMap.put(3,4.0);
+        testMap.put(4, 5.0);
+
+        double testResult = calculateMedianFitness(testMap);
+        System.out.println("Should be '3.0'");
+        System.out.println(testResult);
+    }
+
+    private static void testKill(){
+        ArrayList<ArrayList<Integer>> totalPopulation = new ArrayList<>();
+        HashMap<Integer,Double> testMap = new HashMap<>();
+        double medianFitness = 5.0;
+
+
+//        kill()
     }
 
     private static void doExhaustiveSearch(){
@@ -246,25 +272,242 @@ public class Main {
                 tripData.getMinTripLength(),
                 tripData.getMinTripLengthOrder());
 
-        //TODO Calculate bins
-        fillBins(tripData);
-        for(int i = 0; i < tripData.getBins().length; i++){
-            System.out.printf("\nBin %d) %d", i, tripData.getBins()[i].size());
+        tripData.fillBins();
+    }
+
+    //A genetic search implemented using selective crossover
+    private static void doGeneticSearch(){
+        int generations = 1000;
+        //Generate the initial population
+        final int NUM_TRIPS = 1000;
+        final int NUM_CITIES = 14;
+        TripData tripData = new TripData(NUM_TRIPS);
+        tripData.setAllTripOrders(generateRandomTrips(NUM_TRIPS, NUM_CITIES));
+        ArrayList<ArrayList<Integer>> newPopulation = new ArrayList<>();
+        for(int i = 0; i < generations; i++) {
+            //Reproduce two sets of offspring
+            ArrayList<ArrayList<Integer>> totalPopulation = new ArrayList<>();
+            totalPopulation.addAll(tripData.getAllTripOrders());
+            totalPopulation.addAll(reproduce(tripData));
+            //Determine fitness
+            HashMap<Integer, Double> fitnessRating = calculateFitness(tripData, totalPopulation); //key = index, value = fitness
+            double medianFitness = calculateMedianFitness(fitnessRating);
+            //Eliminate bottom 50%
+            newPopulation = new ArrayList<>();
+            newPopulation.addAll(kill(totalPopulation, fitnessRating, medianFitness));
+            tripData.setAllTripOrders(newPopulation);
+        }
+        calculateTripData(tripData);
+
+    }
+
+    //Method summary:
+    //Selective crossover: For an n-sized AL of trip orders, take the first n/2 objects from parent A, and
+    //Then iterate through parent B and append the n/2 objects that were not given from parent A
+    //If n is odd, then take the first n//2+1 values from Parent A
+    private static ArrayList<ArrayList<Integer>> reproduce(TripData tripData){
+        ArrayList<ArrayList<Integer>> offspring = new ArrayList<>();
+
+        int populationSize = tripData.getAllTripOrders().size();
+            //Create offspring by the first and last
+            for(int i = 0; i < populationSize/2; i++){
+                offspring.add(createOffspringByOpposites(tripData, populationSize, i));
+            }
+            //Create offspring in pairs
+            if(populationSize % 2 != 0){
+                for(int i = 0; i < populationSize-1; i+=2) {
+                    offspring.add(createOffspringByPairs(tripData, populationSize, i));
+                }
+            }
+            else{
+                for(int i = 0; i < populationSize; i+=2) {
+                    offspring.add(createOffspringByPairs(tripData, populationSize, i));
+                }
+            }
+        return offspring;
+    }
+
+    private static ArrayList<Integer> createOffspringByOpposites(TripData tripData, int populationSize, int i){
+        //Create parents
+        ArrayList<Integer> parentA = new ArrayList<>();
+        parentA.addAll(tripData.getAllTripOrders().get(i));
+        ArrayList<Integer> parentB = new ArrayList<>();
+        parentB.addAll(tripData.getAllTripOrders().get(populationSize-i-1));
+
+        //Create offspring1
+        ArrayList<Integer> offspring1 = new ArrayList<>();
+        if(parentA.size() %2 == 0){
+            for(int j = 0; j < parentA.size()/2; j++){
+                offspring1.add(parentA.get(j));
+            }
+            //Selective crossover of Parent B
+            for(int j = 0; j < parentB.size(); j++){
+                int currentIndex = parentB.get(j);
+                if(!offspring1.contains(currentIndex)){
+                    offspring1.add(currentIndex);
+                }
+            }
+        } else {
+            for (int j = 0; j < parentA.size() / 2 + 1; j++) {
+                offspring1.add(parentA.get(j));
+            }
+            //Selective crossover of Parent B
+            int offspringIndex = parentA.size() / 2 + 1;
+            for (int j = 0; j < parentB.size(); j++) {
+                int currentIndex = parentB.get(j);
+                if (!offspring1.contains(currentIndex)) {
+                    offspring1.add(currentIndex);
+                    offspringIndex++;
+                }
+            }
+        }
+        return offspring1;
+    }
+
+    private static ArrayList<Integer> createOffspringByPairs(TripData tripData, int populationSize, int i) {
+        //Create parents
+        ArrayList<Integer> parentA = new ArrayList<>();
+        parentA.addAll(tripData.getAllTripOrders().get(i));
+        ArrayList<Integer> parentB = new ArrayList<>();
+        parentB.addAll(tripData.getAllTripOrders().get(i + 1));
+
+        //Create offspring2
+        ArrayList<Integer> offspring2 = new ArrayList<>();
+        if (parentA.size() % 2 == 0) {
+            for (int j = 0; j < parentA.size() / 2; j++) {
+                offspring2.add(parentA.get(j));
+            }
+            //Selective crossover of Parent B
+            for (int j = 0; j < parentB.size(); j++) {
+                int currentIndex = parentB.get(j);
+                if (!offspring2.contains(currentIndex)) {
+                    offspring2.add(currentIndex);
+                }
+            }
+        } else {
+            for (int j = 0; j < parentA.size() / 2 + 1; j++) {
+                offspring2.add(parentA.get(j));
+            }
+            //Selective crossover of Parent B
+            for (int j = 0; j < parentB.size(); j++) {
+                int currentIndex = parentB.get(j);
+                if (!offspring2.contains(currentIndex)) {
+                    offspring2.add(currentIndex);
+                }
+            }
+        }
+        return offspring2;
+    }
+
+    private static HashMap<Integer, Double> calculateFitness(TripData tripData, ArrayList<ArrayList<Integer>> totalPopulation){
+        HashMap<Integer, Double> fitnessMap = new HashMap<Integer, Double>();
+        for(int i = 0; i < totalPopulation.size(); i++){
+            ArrayList<Integer> currentTrip = totalPopulation.get(i);
+            double tripCost = tripData.tripCost(currentTrip);
+            fitnessMap.put(i, tripCost);
+        }
+
+        return fitnessMap;
+    }
+
+    private static double calculateMedianFitness(HashMap<Integer, Double> fitnessRating){
+        Object[] fitnessValues = fitnessRating.values().toArray();
+        double[] fitnessDoubles = new double[fitnessValues.length];
+        for(int i = 0; i < fitnessDoubles.length; i++){
+            fitnessDoubles[i] = Double.parseDouble(fitnessValues[i].toString());
+        }
+        Arrays.sort(fitnessDoubles);
+        if(fitnessDoubles.length % 2 !=0 ){
+            return fitnessDoubles[fitnessDoubles.length/2];
+        }
+        else{
+            double[] middleValues = new double[2];
+            middleValues[1] = fitnessDoubles[fitnessDoubles.length/2];
+            middleValues[0] = fitnessDoubles[fitnessDoubles.length/2 - 1];
+            double median = (middleValues[0] + middleValues[1]) / 2.0;
+            return median;
         }
     }
 
-        private static void fillBins(TripData tripData){
-        double[] tripLengths = tripData.getTripLengths();
-        //Add each trip to the correct bucket
-        for(int i = 0; i < tripLengths.length; i++){
-            double currentTrip = tripLengths[i];
-            //The following line normalizes the value to return a value 0-9,
-            //Which corresponds to the appropriate bucket to place that trip in
-            int bucketIndex = (int) Math.floor((currentTrip - tripData.getMinTripLength())/tripData.BIN_SIZE);
-            if(bucketIndex == tripData.getBins().length){
-                bucketIndex--;
+    private static ArrayList<ArrayList<Integer>> kill(ArrayList<ArrayList<Integer>> totalPopulation,HashMap<Integer,Double> fitnessRating,double medFitness){
+
+        int killCount = totalPopulation.size() - 1000; //adjust elimination based on population changes
+
+
+        int currentIndex = 0;
+        int startingSize = totalPopulation.size();
+        for(int i = 0; i < startingSize; i++){
+            if(killCount > 0) {
+                if (fitnessRating.get(i) >= medFitness) {
+                    totalPopulation.remove(currentIndex);
+                    killCount--;
+                } else {
+                    currentIndex++;
+                }
             }
-            tripData.getBins()[bucketIndex].add(currentTrip);
+        }
+        return totalPopulation;
+    }
+
+    private static void doSimulatedAnnealing(){
+        double coolingConstant = 0.0003;
+        TripData tripData = new TripData(50);
+        for(int i = 0; i < 50; i++) {
+
+            //Create initial random solutions
+            ArrayList<Integer> bestSolution = generateRandomTrips(1, 14).get(0);
+            int temperature = 1000;
+            while (temperature > 0) {
+                //Create a small change in the current best solution
+                ArrayList<Integer> newSolution = new ArrayList<>();
+                newSolution.addAll(bestSolution);
+
+                //Swap two random cities for minor change
+                Random random = new Random();
+                int pivotOne;
+                int pivotTwo;
+                do {
+                    pivotOne = random.nextInt(14);
+                    pivotTwo = random.nextInt(14);
+                } while (pivotOne == pivotTwo);
+                int temp = newSolution.get(pivotOne);
+                newSolution.set(pivotOne, newSolution.get(pivotTwo));
+                newSolution.set(pivotTwo, temp);
+
+                //Determine fitness
+                double newSolutionCost = tripData.tripCost(newSolution);
+                double bestSolutionCost = tripData.tripCost(bestSolution);
+
+                //Acceptance function
+                boolean isAcceptable = shouldAccept(newSolutionCost, bestSolutionCost, temperature);
+                if (isAcceptable) {
+                    bestSolution = new ArrayList<>();
+                    bestSolution.addAll(newSolution);
+                }
+
+                temperature -= coolingConstant;
+            }
+            tripData.getAllTripOrders().add(bestSolution);
+        }
+        //Get data
+        calculateTripData(tripData);
+    }
+
+    private static boolean shouldAccept(double newSolutionCost, double bestSolutionCost, int temperature){
+        boolean isAcceptable = false;
+        double probability = determineProbability(newSolutionCost, bestSolutionCost, temperature);
+        if(probability > .999){
+            isAcceptable = true;
+        }
+        return  isAcceptable;
+    }
+
+    private static double determineProbability(double newSolutionCost, double bestSolutionCost, int temperature){
+        if(newSolutionCost < bestSolutionCost){
+            return 1.0;
+        } else {
+            double prob = Math.exp((bestSolutionCost - newSolutionCost) / temperature);
+            return prob;
         }
     }
 
