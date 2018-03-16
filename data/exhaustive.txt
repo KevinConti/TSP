@@ -1,0 +1,7 @@
+The standard deviation is: 0.844460
+The mean is: 8.296876
+The minimum cost is: 3.689407
+Minimum cost order: 1 6 5 14 4 2 8 11 9 12 13 3 10 7
+The maximum cost is: 11.503827
+Maximum cost order: 1 11 6 9 5 13 8 7 2 10 4 3 14 12
+The interval for each bin is: 0.078144
