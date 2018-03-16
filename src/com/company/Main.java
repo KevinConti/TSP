@@ -18,11 +18,10 @@ public class Main {
     static long count = 0;
 
     public static void main(String[] args) {
-        //doExhaustiveSearch();
+//        doExhaustiveSearch();
 //        doRandomSearch();
 //        doGeneticSearch();
-
-        doSimulatedAnnealing();
+//        doSimulatedAnnealing();
         //Some testing methods
 //        testMedian();
 //        testKill();
@@ -52,7 +51,7 @@ public class Main {
 
     private static void doExhaustiveSearch(){
         //The value of 14!
-        final BigInteger PERMUTATIONS = factorial(148);
+        final BigInteger PERMUTATIONS = factorial(14);
         //Parse data to create a usable dictionary
         myGuide = new TravelGuide("data/data.txt");
         //Call the permutation tester. This will call usePermutation once per permutation
@@ -84,7 +83,7 @@ public class Main {
 
     public static void usePermutation(int[] values){
         count++;
-        if(count % 100000 == 0) {
+        if(count % 1000000 == 0) {
             System.out.println(count);
         }
         //Determine the cost of the trip
@@ -226,7 +225,27 @@ public class Main {
         final int NUM_CITIES = 14;
         TripData tripData = new TripData(NUM_TRIPS);
         tripData.setAllTripOrders(generateRandomTrips(NUM_TRIPS, NUM_CITIES));
+        //Test to see uniform distribution
+//        testUniformity(tripData);
         calculateTripData(tripData);
+    }
+
+    private static void testUniformity(TripData tripData){
+        HashMap<Integer, Integer> indexToCountMap = new HashMap<>();
+        for(int i = 0; i < 14; i++){
+            indexToCountMap.put(i, 0);
+        }
+        for(int i = 0; i < tripData.getAllTripOrders().size(); i++){
+            //check distribution of first city
+            ArrayList<Integer> currentTrip = tripData.getAllTripOrders().get(i);
+            int firstCityIndex = currentTrip.get(1);
+            indexToCountMap.put(firstCityIndex, indexToCountMap.get(firstCityIndex) + 1);
+        }
+
+        //Output
+        for(int i = 0; i < 14; i++) {
+            System.out.printf("\nCity %d occurs first %d times", i, indexToCountMap.get(i));
+        }
     }
 
     public static ArrayList<ArrayList<Integer>> generateRandomTrips(int numTrips, int numCities){
